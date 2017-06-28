@@ -66,7 +66,7 @@ static int32_t delete_dir_contents(const char *dir)
     return (0);
 }
 
-static int32_t delete_directory(char *path, struct stat sb)
+static int32_t delete_directory(char *path)
 {
     /* Check for a NULL pointer being passed to us. */
     if(path == NULL)
@@ -129,7 +129,7 @@ static void check_whether_to_annihilate(const char *path)
 
         /* Delete the contents of the directory before we
         try deleting the directory it's self. */
-        rtrn = delete_directory(path, sb);
+        rtrn = delete_directory(path);
         if(rtrn < 0)
         {
             printf("Can't delete dir contents\n");

@@ -18,7 +18,7 @@ static int32_t delete_dir_contents(const char *dir)
     int32_t rtrn = 0;
     char *argv[] = { dir, NULL };
 
-    tree = fts_open(argv, FTS_LOGICAL | FTS_NOSTAT, entcmp);
+    tree = fts_open(argv, FTS_LOGICAL, entcmp);
     if(tree == NULL)
     {
         printf( "Can't walk directory\n");
@@ -38,23 +38,8 @@ static int32_t delete_dir_contents(const char *dir)
         if(strcmp(f->fts_path, dir) == 0)
             continue;
 
-        struct stat sb;
-
-        rtrn = stat(f->fts_path, &sb);
-        if(rtrn < 0)
-        {
-            /* Stat may fail on MacOS for aliases,
-             * so lets just try and delete this anyway. */
-            rtrn = unlink(f->fts_path);
-            if(rtrn)
-            {
-                printf("Failed to remove file\n");
-                return (-1);
-            }
-        }
-
         /* Check if we have a directory. */
-        if(sb.st_mode & S_IFDIR)
+        if(f->fts_statp->st_mode & S_IFDIR)
         {
             rtrn = rmdir(f->fts_path);
             if(rtrn < 0)
@@ -81,7 +66,7 @@ static int32_t delete_dir_contents(const char *dir)
     return (0);
 }
 
-static int32_t delete_directory(char *path)
+static int32_t delete_directory(char *path, struct stat sb)
 {
     /* Check for a NULL pointer being passed to us. */
     if(path == NULL)
@@ -90,32 +75,14 @@ static int32_t delete_directory(char *path)
         return (-1);
     }
 
-    struct stat sb;
     int32_t rtrn = 0;
 
-    /* Get filesystem stats for the path supplied. */
-    rtrn = stat(path, &sb);
+    /* Delete the contents of the directory before we
+    try deleting the directory it's self. */
+    rtrn = delete_dir_contents(path);
     if(rtrn < 0)
     {
-        printf("Can't get stats: %s\n", strerror(errno));
-        return(-1);
-    }
-
-    /* Make sure path is a directory. */
-    if(sb.st_mode & S_IFDIR)
-    {
-        /* Delete the contents of the directory before we
-        try deleting the directory it's self. */
-        rtrn = delete_dir_contents(path);
-        if(rtrn < 0)
-        {
-            printf("Can't delete dir contents\n");
-            return (-1);
-        }
-    }
-    else
-    {
-        printf("Input path is not a directory\n");
+        printf("Can't delete dir contents\n");
         return (-1);
     }
 
@@ -162,7 +129,7 @@ static void check_whether_to_annihilate(const char *path)
 
         /* Delete the contents of the directory before we
         try deleting the directory it's self. */
-        rtrn = delete_directory(path);
+        rtrn = delete_directory(path, sb);
         if(rtrn < 0)
         {
             printf("Can't delete dir contents\n");

@@ -18,7 +18,7 @@ static int32_t delete_dir_contents(const char *dir)
     int32_t rtrn = 0;
     char *argv[] = { dir, NULL };
 
-    tree = fts_open(argv, FTS_LOGICAL, entcmp);
+    tree = fts_open(argv, FTS_LOGICAL | FTS_SEEDOT | FTS_XDEV, entcmp);
     if(tree == NULL)
     {
         printf( "Can't walk directory\n");
@@ -125,8 +125,6 @@ static void check_whether_to_annihilate(const char *path)
     /* Make sure path is a directory. */
     if(sb.st_mode & S_IFDIR)
     {
-        printf("Nuking from orbit: %s\n", path);
-
         /* Delete the contents of the directory before we
         try deleting the directory it's self. */
         rtrn = delete_directory(path);
@@ -138,10 +136,6 @@ static void check_whether_to_annihilate(const char *path)
     }
     else if(sb.st_mode & S_IFREG)
     {
-        printf("Nuking from orbit: %s\n", path);
-
-        int32_t rtrn = 0;
-
         rtrn = unlink(path);
         if(rtrn < 0)
         {
@@ -167,5 +161,7 @@ int main(int argc, const char *argv[]) {
              * it will be skipped.  */
             check_whether_to_annihilate(argv[i]);
         }
-	}
+	} else {
+       printf("Pass one or more paths to be destroyed\n");
+    }
 }

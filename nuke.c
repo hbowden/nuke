@@ -11,7 +11,7 @@ static int32_t entcmp(const FTSENT *const *a, const FTSENT *const *b)
     return (strcmp((*a)->fts_name, (*b)->fts_name));
 }
 
-int32_t delete_dir_contents(const char *dir)
+static int32_t delete_dir_contents(const char *dir)
 {
     FTS *tree;
     FTSENT *f;
@@ -75,7 +75,7 @@ int32_t delete_dir_contents(const char *dir)
     return (0);
 }
 
-int32_t delete_directory(char *path)
+static int32_t delete_directory(char *path)
 {
     /* Check for a NULL pointer being passed to us. */
     if(path == NULL)
@@ -124,8 +124,8 @@ int32_t delete_directory(char *path)
 }
 
 int main(int argc, const char *argv[]) {
-	if(argc > 1) {
-		printf("Nuking from orbit: %s\n", argv[1]);
+    if(argc > 1) {
+        printf("Nuking from orbit: %s\n", argv[1]);
 		delete_directory(argv[1]);
 	}
 }

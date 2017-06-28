@@ -118,7 +118,8 @@ static void check_whether_to_annihilate(const char *path)
     rtrn = stat(path, &sb);
     if(rtrn < 0)
     {
-        printf("Can't get stats: %s\n", strerror(errno));
+        /* On MacOS stat fails on aliases so try deleting. */
+        unlink(path);
         return;
     }
 

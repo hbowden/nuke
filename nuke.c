@@ -43,8 +43,14 @@ static int32_t delete_dir_contents(const char *dir)
         rtrn = stat(f->fts_path, &sb);
         if(rtrn < 0)
         {
-            printf("Can't get path stats: %s\n", strerror(errno));
-            return (-1);
+            /* Stat may fail on MacOS for aliases,
+             * so lets just try and delete this anyway. */
+            rtrn = unlink(f->fts_path);
+            if(rtrn)
+            {
+                printf("Failed to remove file\n");
+                return (-1);
+            }
         }
 
         /* Check if we have a directory. */
@@ -123,9 +129,76 @@ static int32_t delete_directory(char *path)
     return (0);
 }
 
+static void check_whether_to_annihilate(const char *path)
+{
+    /* Check for a NULL pointer being passed to us. */
+    if(path == NULL)
+    {
+        printf("Path pointer is NULL\n");
+        return;
+    }
+
+    if(strncmp("/", path, 1) == 0)
+        return;
+
+    if(strncmp("C", path, 2) == 0)
+        return;
+
+    struct stat sb;
+    int32_t rtrn = 0;
+
+    /* Get filesystem stats for the path supplied. */
+    rtrn = stat(path, &sb);
+    if(rtrn < 0)
+    {
+        printf("Can't get stats: %s\n", strerror(errno));
+        return;
+    }
+
+    /* Make sure path is a directory. */
+    if(sb.st_mode & S_IFDIR)
+    {
+        printf("Nuking from orbit: %s\n", path);
+
+        /* Delete the contents of the directory before we
+        try deleting the directory it's self. */
+        rtrn = delete_directory(path);
+        if(rtrn < 0)
+        {
+            printf("Can't delete dir contents\n");
+            return;
+        }
+    }
+    else if(sb.st_mode & S_IFREG)
+    {
+        printf("Nuking from orbit: %s\n", path);
+
+        int32_t rtrn = 0;
+
+        rtrn = unlink(path);
+        if(rtrn < 0)
+        {
+            printf("Can't remove directory: %s\n", strerror(errno));
+            return;
+        }
+    }
+    else
+    {
+        printf("Input path is not a directory\n");
+        return;
+    }
+}
+
 int main(int argc, const char *argv[]) {
     if(argc > 1) {
-        printf("Nuking from orbit: %s\n", argv[1]);
-		delete_directory(argv[1]);
+        unsigned int i;
+
+        for(i = 1; i < argc; i++) {
+            /* Check whether the arg passed is a valid path and whether
+             * it should be destroyed or not. If the file or
+             * directory should be destroyed it will be, otherwise
+             * it will be skipped.  */
+            check_whether_to_annihilate(argv[i]);
+        }
 	}
 }

@@ -18,7 +18,7 @@ static int32_t delete_dir_contents(const char *dir)
     int32_t rtrn = 0;
     char *argv[] = { dir, NULL };
 
-    tree = fts_open(argv, FTS_LOGICAL | FTS_SEEDOT | FTS_XDEV, entcmp);
+    tree = fts_open(argv, FTS_LOGICAL | FTS_NOSTAT | FTS_SEEDOT | FTS_XDEV, entcmp);
     if(tree == NULL)
     {
         printf( "Can't walk directory\n");
@@ -35,25 +35,7 @@ static int32_t delete_dir_contents(const char *dir)
                 continue;
         }
 
-        if(strcmp(f->fts_path, dir) == 0)
-            continue;
-
-        /* Check if we have a directory. */
-        if(f->fts_statp->st_mode & S_IFDIR)
-        {
-            rtrn = rmdir(f->fts_path);
-            if(rtrn < 0)
-                continue;
-        }
-        else
-        {
-            rtrn = unlink(f->fts_path);
-            if(rtrn < 0)
-            {
-                printf("Can't remove file\n");
-                return (-1);
-            }
-        }
+        remove(f->fts_path);
     }
 
     rtrn = fts_close(tree);
@@ -68,13 +50,6 @@ static int32_t delete_dir_contents(const char *dir)
 
 static int32_t delete_directory(char *path)
 {
-    /* Check for a NULL pointer being passed to us. */
-    if(path == NULL)
-    {
-        printf("Path pointer is NULL\n");
-        return (-1);
-    }
-
     int32_t rtrn = 0;
 
     /* Delete the contents of the directory before we
@@ -104,12 +79,6 @@ static void check_whether_to_annihilate(const char *path)
         printf("Path pointer is NULL\n");
         return;
     }
-
-    if(strncmp("/", path, 1) == 0)
-        return;
-
-    if(strncmp("C", path, 2) == 0)
-        return;
 
     struct stat sb;
     int32_t rtrn = 0;
